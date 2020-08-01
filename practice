@@ -1,0 +1,38 @@
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import numpy as np
+from datetime import datetime
+from tqdm import tqdm
+
+# 60일 평균 대비 오늘 거래량 구하기  
+
+def period_volume_ratio(code, period):
+    
+    data_list = []
+
+    for page in tqdm(range(1,4)):
+        
+        url = 'https://finance.naver.com/item/frgn.nhn?code=' + str(code) + '&page=' + str(page)
+
+        req = requests.get(url)
+        soup = BeautifulSoup(req.text,'html.parser')
+        data = soup.find_all('tr')[18:47]
+
+        for d in data:
+            data_list.append(d.text.split())
+
+
+
+
+    df_data = pd.DataFrame(data_list).dropna()
+    df_data.columns = ['날짜', '종가', '전일비', '등락률', '거래량', '기관 순매수', '외국인 순매수', '외국인 보유주수', '외국인 보유율' ]
+
+    df = df_data.loc[:(period-1)]
+    v_today = df['거래량'].str.replace(',','').astype('int64')[0]
+    v_mean60 = df['거래량'].str.replace(',','').astype('int64').mean()
+    ratio = v_today / v_mean60
+    return ratio
+    
+    
+    period_volume_ratio('000660', 60)
